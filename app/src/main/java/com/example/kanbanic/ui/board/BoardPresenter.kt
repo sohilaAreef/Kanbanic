@@ -45,7 +45,7 @@ class BoardPresenter : BoardContract.Presenter {
         view?.showBoard(project, tasks)
     }
 
-    override fun moveTask(taskId: String, toColumnId: String, newIndex: Int) {
+    override fun updateTaskColumn(taskId: String, toColumnId: String, newIndex: Int) {
         // Firebase: update task.columnId and task.positionIndex
         // Since it's UI only, we just reload or expect the listener to trigger showBoard
     }
@@ -65,7 +65,7 @@ class BoardPresenter : BoardContract.Presenter {
         // For UI: show success
     }
     
-    fun addComment(taskId: String, text: String) {
+    override fun addComment(taskId: String, text: String) {
         // Firebase: update task.comments
     }
 }
