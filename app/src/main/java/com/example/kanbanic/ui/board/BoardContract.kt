@@ -18,9 +18,21 @@ interface BoardContract {
         fun detachView()
         fun loadBoard(projectId: String)
         fun updateTaskColumn(taskId: String, toColumnId: String, newIndex: Int)
-        fun addTask(projectId: String, columnId: String, title: String, description: String)
+        fun addTask(
+            projectId: String, 
+            columnId: String, 
+            title: String, 
+            description: String, 
+            priority: com.example.kanbanic.data.model.TaskPriority, 
+            importance: com.example.kanbanic.data.model.TaskImportance,
+            dueDate: Long? = null,
+            assigneeId: String? = null,
+            color: String? = null
+        )
         fun addColumn(projectId: String, name: String)
         fun inviteMember(projectId: String, email: String)
         fun addComment(taskId: String, text: String)
+        fun updateProjectBackground(projectId: String, color: String)
+        fun updateColumnColor(projectId: String, columnId: String, color: String)
     }
 }
