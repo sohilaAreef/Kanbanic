@@ -4,25 +4,22 @@ import com.example.kanbanic.data.model.*
 
 object MockDataRepository {
     private val projects = mutableListOf(
-        Project(id = "1", name = "Makarya App", description = "Project management mobile application", 
-            columns = listOf(Column("1", "To Do", 0), Column("2", "In Progress", 1), Column("3", "Done", 2)),
-            members = listOf("u1", "u2")),
+        Project(id = "1", name = "Makarya App", description = "Project management mobile application",
+            columns = listOf(Column("1", "To Do", 0), Column("2", "In Progress", 1), Column("3", "Done", 2))),
         Project(id = "2", name = "Freelance UI", description = "UI/UX design for client",
-            columns = listOf(Column("1", "To Do", 0), Column("2", "In Progress", 1), Column("3", "Done", 2)),
-            members = listOf("u1"))
-    )
-
-    private val users = listOf(
-        User("u1", "Alice", "alice@example.com"),
-        User("u2", "Bob", "bob@example.com"),
-        User("u3", "Charlie", "charlie@example.com")
+            columns = listOf(Column("1", "To Do", 0), Column("2", "In Progress", 1), Column("3", "Done", 2)))
     )
 
     private val tasks = mutableListOf(
-        Task("t1", "1", "1", "Design Landing Page", "Create UI for the main page", priority = TaskPriority.HIGH, importance = TaskImportance.VERY_IMPORTANT),
-        Task("t2", "1", "1", "Setup Firebase", "Configure Auth and Firestore", priority = TaskPriority.URGENT, importance = TaskImportance.VERY_IMPORTANT),
-        Task("t3", "1", "2", "Implement MVP", "Structure the app using MVP pattern", priority = TaskPriority.MEDIUM, importance = TaskImportance.IMPORTANT),
-        Task("t4", "1", "3", "Fix Theme Colors", "Ensure theme matches the mockups", priority = TaskPriority.LOW, importance = TaskImportance.NOT_IMPORTANT)
+        Task("t1", "1", "1", "Design Landing Page", "Create UI for the main page", priority = TaskPriority.HIGH),
+        Task("t2", "1", "1", "Setup Firebase", "Configure Auth and Firestore", priority = TaskPriority.URGENT),
+        Task("t3", "1", "2", "Implement MVP", "Structure the app using MVP pattern", priority = TaskPriority.MEDIUM),
+        Task("t4", "1", "3", "Fix Theme Colors", "Ensure theme matches the mockups", priority = TaskPriority.LOW)
+    )
+
+    // Mock "auth database" until Firebase Auth is wired up
+    private val users = mutableListOf(
+        User(id = "u1", name = "Demo User", email = "demo@kanbanic.com")
     )
 
     fun getProjects() = projects.toList()
@@ -30,8 +27,8 @@ object MockDataRepository {
     fun addProject(name: String, description: String) {
         val newId = (projects.size + 1).toString()
         projects.add(Project(
-            id = newId, 
-            name = name, 
+            id = newId,
+            name = name,
             description = description,
             columns = listOf(Column("1", "To Do", 0), Column("2", "In Progress", 1), Column("3", "Done", 2))
         ))
@@ -41,33 +38,9 @@ object MockDataRepository {
 
     fun getTasksByProject(projectId: String) = tasks.filter { it.projectId == projectId }
 
-    fun getUsers() = users
-    fun getUsersByIds(ids: List<String>) = users.filter { it.id in ids }
-
-    fun addTask(
-        projectId: String, 
-        columnId: String, 
-        title: String, 
-        description: String, 
-        priority: TaskPriority = TaskPriority.MEDIUM, 
-        importance: TaskImportance = TaskImportance.IMPORTANT,
-        dueDate: Long? = null,
-        assigneeId: String? = null,
-        color: String? = null
-    ) {
+    fun addTask(projectId: String, columnId: String, title: String, description: String) {
         val newId = "t${tasks.size + 1}"
-        tasks.add(Task(
-            id = newId, 
-            projectId = projectId, 
-            columnId = columnId, 
-            title = title, 
-            description = description, 
-            priority = priority, 
-            importance = importance,
-            dueDate = dueDate,
-            assigneeId = assigneeId,
-            color = color
-        ))
+        tasks.add(Task(id = newId, projectId = projectId, columnId = columnId, title = title, description = description))
     }
 
     fun updateTaskColumn(taskId: String, newColumnId: String) {
@@ -86,21 +59,17 @@ object MockDataRepository {
         }
     }
 
-    fun updateProjectBackground(projectId: String, color: String) {
-        val index = projects.indexOfFirst { it.id == projectId }
-        if (index != -1) {
-            projects[index] = projects[index].copy(background = color)
-        }
+    // --- Auth (mock, swap for Firebase Auth later) ---
+
+    fun isEmailTaken(email: String): Boolean =
+        users.any { it.email.equals(email, ignoreCase = true) }
+
+    fun registerUser(name: String, email: String): User {
+        val newUser = User(id = "u${users.size + 1}", name = name, email = email)
+        users.add(newUser)
+        return newUser
     }
 
-    fun updateColumnColor(projectId: String, columnId: String, color: String) {
-        val projectIndex = projects.indexOfFirst { it.id == projectId }
-        if (projectIndex != -1) {
-            val project = projects[projectIndex]
-            val updatedColumns = project.columns.map { 
-                if (it.id == columnId) it.copy(color = color) else it
-            }
-            projects[projectIndex] = project.copy(columns = updatedColumns)
-        }
-    }
+    fun getUserByEmail(email: String): User? =
+        users.find { it.email.equals(email, ignoreCase = true) }
 }

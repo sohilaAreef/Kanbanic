@@ -12,7 +12,7 @@ interface AuthContract {
         fun attachView(view: View)
         fun detachView()
         fun loginWithEmail(email: String, pass: String)
-        fun loginWithGoogle()
-        fun signUp(email: String, pass: String)
+        fun signInWithGoogleIdToken(idToken: String)
+        fun signUp(name: String, email: String, pass: String, confirmPass: String)
     }
 }
