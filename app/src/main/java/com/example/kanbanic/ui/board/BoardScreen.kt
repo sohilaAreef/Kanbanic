@@ -173,10 +173,23 @@ fun BoardScreen(
                             draggingTask = task
                             dragOffset = offset
                         },
+                        onDrag = { dragAmount ->
+                            dragOffset += dragAmount
+                        },
+                        onDragEnd = {
+                            val targetColumnId = columnBounds.entries.find { it.value.contains(dragOffset) }?.key
+                            if (targetColumnId != null && draggingTask?.columnId != targetColumnId) {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                onMoveTask(draggingTask!!.id, targetColumnId)
+                            }
+                            draggingTask = null
+                            dragOffset = Offset.Zero
+                        },
                         onPositioned = { rect ->
                             columnBounds = columnBounds + (column.id to rect)
                         },
-                        isDraggingOver = draggingTask != null && columnBounds[column.id]?.contains(dragOffset) == true
+                        isDraggingOver = draggingTask != null && columnBounds[column.id]?.contains(dragOffset) == true,
+                        draggingTaskId = draggingTask?.id
                     )
                 }
                 item {
@@ -201,36 +214,6 @@ fun BoardScreen(
             }
         }
     }
-
-    // لاقط السحب العالمي
-    if (draggingTask != null) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .pointerInput(Unit) {
-                    detectDragGesturesAfterLongPress(
-                        onDragStart = { },
-                        onDrag = { change, dragAmount ->
-                            change.consume()
-                            dragOffset += dragAmount
-                        },
-                        onDragEnd = {
-                            val targetColumnId = columnBounds.entries.find { it.value.contains(dragOffset) }?.key
-                            if (targetColumnId != null && draggingTask?.columnId != targetColumnId) {
-                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                onMoveTask(draggingTask!!.id, targetColumnId)
-                            }
-                            draggingTask = null
-                            dragOffset = Offset.Zero
-                        },
-                        onDragCancel = {
-                            draggingTask = null
-                            dragOffset = Offset.Zero
-                        }
-                    )
-                }
-        )
-    }
 }
 
 @Composable
@@ -241,8 +224,11 @@ fun BoardColumn(
     onTaskClick: (Task) -> Unit,
     onUpdateColor: (String) -> Unit,
     onDragStart: (Task, Offset) -> Unit,
+    onDrag: (Offset) -> Unit,
+    onDragEnd: () -> Unit,
     onPositioned: (androidx.compose.ui.geometry.Rect) -> Unit,
-    isDraggingOver: Boolean
+    isDraggingOver: Boolean,
+    draggingTaskId: String?
 ) {
     var showColorMenu by remember { mutableStateOf(false) }
     val columnBgColor = column.color?.let { Color(android.graphics.Color.parseColor(it)) } ?: Color.Transparent
@@ -271,7 +257,8 @@ fun BoardColumn(
                 Text(
                     text = column.name,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
+                    fontSize = 16.sp,
+                    color = DeepPurple
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Badge(containerColor = PrimaryIndigo.copy(alpha = 0.1f)) {
@@ -311,13 +298,18 @@ fun BoardColumn(
                 Box(
                     modifier = Modifier
                         .onGloballyPositioned { itemPosition = it.positionInWindow() }
+                        .alpha(if (draggingTaskId == task.id) 0f else 1f)
                         .pointerInput(task) {
                             detectDragGesturesAfterLongPress(
                                 onDragStart = { offset ->
                                     onDragStart(task, itemPosition + offset)
                                 },
-                                onDrag = { _, _ -> /* Handled by global listener */ },
-                                onDragEnd = { /* Handled by global listener */ }
+                                onDrag = { change, dragAmount ->
+                                    change.consume()
+                                    onDrag(dragAmount)
+                                },
+                                onDragEnd = { onDragEnd() },
+                                onDragCancel = { onDragEnd() }
                             )
                         }
                 ) {
