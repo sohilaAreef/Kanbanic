@@ -14,13 +14,15 @@ data class Project(
     val columns: List<Column> = emptyList(),
     val members: List<String> = emptyList(), // List of user IDs
     val ownerId: String = "",
-    val inviteCode: String = ""
+    val inviteCode: String = "",
+    val background: String? = null // Hex color or image URL
 )
 
 data class Column(
     val id: String = "",
     val name: String = "",
-    val order: Int = 0
+    val order: Int = 0,
+    val color: String? = null // Hex color for column background
 )
 
 data class Task(
@@ -32,6 +34,8 @@ data class Task(
     val assigneeId: String? = null,
     val dueDate: Long? = null,
     val priority: TaskPriority = TaskPriority.MEDIUM,
+    val importance: TaskImportance = TaskImportance.IMPORTANT,
+    val color: String? = null, // Hex color for the card
     val positionIndex: Int = 0,
     val comments: List<Comment> = emptyList(),
     val activities: List<ActivityLog> = emptyList()
@@ -53,4 +57,8 @@ data class ActivityLog(
 
 enum class TaskPriority {
     LOW, MEDIUM, HIGH, URGENT
+}
+
+enum class TaskImportance {
+    NOT_IMPORTANT, IMPORTANT, VERY_IMPORTANT
 }

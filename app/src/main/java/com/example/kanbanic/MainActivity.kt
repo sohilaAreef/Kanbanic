@@ -70,6 +70,15 @@ class MainActivity : ComponentActivity(), AuthContract.View, ProjectContract.Vie
                                 onAddColumn = { isShowAddColumnDialog = true },
                                 onInviteMember = { isShowInviteMemberDialog = true },
                                 onTaskClick = { showTaskDetails(it) },
+                                onMoveTask = { taskId, columnId -> 
+                                    boardPresenter.updateTaskColumn(taskId, columnId, 0)
+                                },
+                                onUpdateBackground = { color ->
+                                    boardPresenter.updateProjectBackground(project.id, color)
+                                },
+                                onUpdateColumnColor = { columnId, color ->
+                                    boardPresenter.updateColumnColor(project.id, columnId, color)
+                                },
                                 onBack = { currentScreenState = AppScreen.ProjectList }
                             )
                         }
@@ -90,11 +99,17 @@ class MainActivity : ComponentActivity(), AuthContract.View, ProjectContract.Vie
                 }
 
                 showAddTaskDialogByColumnId?.let { columnId ->
+                    val project = boardState?.first
+                    val members = project?.members?.let { ids -> 
+                        com.example.kanbanic.data.MockDataRepository.getUsersByIds(ids)
+                    } ?: emptyList()
+                    
                     AddTaskDialog(
+                        members = members,
                         onDismiss = { showAddTaskDialogByColumnId = null },
-                        onConfirm = { title, desc ->
-                            boardState?.first?.id?.let { projectId ->
-                                boardPresenter.addTask(projectId, columnId, title, desc)
+                        onConfirm = { title, desc, priority, importance, dueDate, assigneeId, color ->
+                            project?.id?.let { projectId ->
+                                boardPresenter.addTask(projectId, columnId, title, desc, priority, importance, dueDate, assigneeId, color)
                             }
                             showAddTaskDialogByColumnId = null
                         }

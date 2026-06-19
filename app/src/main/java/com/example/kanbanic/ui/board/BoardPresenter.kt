@@ -1,5 +1,6 @@
 package com.example.kanbanic.ui.board
 
+import com.example.kanbanic.data.MockDataRepository
 import com.example.kanbanic.data.model.*
 
 class BoardPresenter : BoardContract.Presenter {
@@ -14,49 +15,41 @@ class BoardPresenter : BoardContract.Presenter {
     }
 
     override fun loadBoard(projectId: String) {
-        // Mocking project and tasks for UI preparation
-        // In real Firebase: Use Firestore listener here (onSnapshot)
-        val project = Project(
-            id = projectId,
-            name = "Kanbanic Project",
-            columns = listOf(
-                Column("1", "To Do", 0),
-                Column("2", "In Progress", 1),
-                Column("3", "Done", 2)
-            ),
-            inviteCode = "MAKAR-123"
-        )
+        val project = MockDataRepository.getProjectById(projectId)
+        val tasks = MockDataRepository.getTasksByProject(projectId)
 
-        val tasks = listOf(
-            Task(
-                id = "t1", 
-                projectId = projectId, 
-                columnId = "1", 
-                title = "Design Landing Page", 
-                description = "Create UI for the main page", 
-                priority = TaskPriority.HIGH,
-                activities = listOf(ActivityLog(text = "Project created", timestamp = System.currentTimeMillis()))
-            ),
-            Task("t2", projectId, "1", "Setup Firebase", "Configure Auth and Firestore", priority = TaskPriority.URGENT),
-            Task("t3", projectId, "2", "Implement MVP", "Structure the app using MVP pattern", priority = TaskPriority.MEDIUM),
-            Task("t4", projectId, "3", "Fix Theme Colors", "Ensure theme matches the mockups", priority = TaskPriority.LOW)
-        )
-
-        view?.showBoard(project, tasks)
+        if (project != null) {
+            view?.showBoard(project, tasks)
+        } else {
+            view?.showError("Project not found")
+        }
     }
 
     override fun updateTaskColumn(taskId: String, toColumnId: String, newIndex: Int) {
-        // Firebase: update task.columnId and task.positionIndex
-        // Since it's UI only, we just reload or expect the listener to trigger showBoard
+        MockDataRepository.updateTaskColumn(taskId, toColumnId)
+        val project = MockDataRepository.getProjects().find { p -> 
+            MockDataRepository.getTasksByProject(p.id).any { it.id == taskId }
+        }
+        project?.let { loadBoard(it.id) }
     }
 
-    override fun addTask(projectId: String, columnId: String, title: String, description: String) {
-        // Firebase: db.collection("tasks").add(...)
+    override fun addTask(
+        projectId: String, 
+        columnId: String, 
+        title: String, 
+        description: String, 
+        priority: TaskPriority, 
+        importance: TaskImportance,
+        dueDate: Long?,
+        assigneeId: String?,
+        color: String?
+    ) {
+        MockDataRepository.addTask(projectId, columnId, title, description, priority, importance, dueDate, assigneeId, color)
         loadBoard(projectId)
     }
 
     override fun addColumn(projectId: String, name: String) {
-        // Firebase: update project.columns list
+        MockDataRepository.addColumn(projectId, name)
         loadBoard(projectId)
     }
 
@@ -67,5 +60,15 @@ class BoardPresenter : BoardContract.Presenter {
     
     override fun addComment(taskId: String, text: String) {
         // Firebase: update task.comments
+    }
+
+    override fun updateProjectBackground(projectId: String, color: String) {
+        MockDataRepository.updateProjectBackground(projectId, color)
+        loadBoard(projectId)
+    }
+
+    override fun updateColumnColor(projectId: String, columnId: String, color: String) {
+        MockDataRepository.updateColumnColor(projectId, columnId, color)
+        loadBoard(projectId)
     }
 }
