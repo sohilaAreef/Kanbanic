@@ -4,7 +4,7 @@ import com.example.kanbanic.data.model.*
 
 object MockDataRepository {
     private val projects = mutableListOf(
-        Project(id = "1", name = "Makarya App", description = "Project management mobile application", 
+        Project(id = "1", name = "Makarya App", description = "Project management mobile application",
             columns = listOf(Column("1", "To Do", 0), Column("2", "In Progress", 1), Column("3", "Done", 2))),
         Project(id = "2", name = "Freelance UI", description = "UI/UX design for client",
             columns = listOf(Column("1", "To Do", 0), Column("2", "In Progress", 1), Column("3", "Done", 2)))
@@ -17,13 +17,18 @@ object MockDataRepository {
         Task("t4", "1", "3", "Fix Theme Colors", "Ensure theme matches the mockups", priority = TaskPriority.LOW)
     )
 
+    // Mock "auth database" until Firebase Auth is wired up
+    private val users = mutableListOf(
+        User(id = "u1", name = "Demo User", email = "demo@kanbanic.com")
+    )
+
     fun getProjects() = projects.toList()
 
     fun addProject(name: String, description: String) {
         val newId = (projects.size + 1).toString()
         projects.add(Project(
-            id = newId, 
-            name = name, 
+            id = newId,
+            name = name,
             description = description,
             columns = listOf(Column("1", "To Do", 0), Column("2", "In Progress", 1), Column("3", "Done", 2))
         ))
@@ -53,4 +58,18 @@ object MockDataRepository {
             projects[projectIndex] = project.copy(columns = project.columns + newColumn)
         }
     }
+
+    // --- Auth (mock, swap for Firebase Auth later) ---
+
+    fun isEmailTaken(email: String): Boolean =
+        users.any { it.email.equals(email, ignoreCase = true) }
+
+    fun registerUser(name: String, email: String): User {
+        val newUser = User(id = "u${users.size + 1}", name = name, email = email)
+        users.add(newUser)
+        return newUser
+    }
+
+    fun getUserByEmail(email: String): User? =
+        users.find { it.email.equals(email, ignoreCase = true) }
 }

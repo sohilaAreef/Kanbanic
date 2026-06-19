@@ -18,6 +18,7 @@ import com.example.kanbanic.ui.board.BoardScreen
 import com.example.kanbanic.ui.board.TaskDetailBottomSheet
 import com.example.kanbanic.ui.project.*
 import com.example.kanbanic.ui.theme.KanbanicTheme
+import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : ComponentActivity(), AuthContract.View, ProjectContract.View, BoardContract.View {
 
@@ -28,7 +29,7 @@ class MainActivity : ComponentActivity(), AuthContract.View, ProjectContract.Vie
     private var currentScreenState by mutableStateOf<AppScreen>(AppScreen.Auth)
     private var projectsState by mutableStateOf<List<Project>>(emptyList())
     private var boardState by mutableStateOf<Pair<Project, List<Task>>?>(null)
-    
+
     // UI States for Dialogs and Overlays
     private var selectedTask by mutableStateOf<Task?>(null)
     private var showAddTaskDialogByColumnId by mutableStateOf<String?>(null)
@@ -43,6 +44,11 @@ class MainActivity : ComponentActivity(), AuthContract.View, ProjectContract.Vie
         projectPresenter.attachView(this)
         boardPresenter.attachView(this)
 
+        // Skip the login screen if a Firebase session is already active
+        if (FirebaseAuth.getInstance().currentUser != null) {
+            navigateToDashboard()
+        }
+
         enableEdgeToEdge()
         setContent {
             KanbanicTheme {
@@ -52,7 +58,8 @@ class MainActivity : ComponentActivity(), AuthContract.View, ProjectContract.Vie
                         projects = projectsState,
                         onProjectClick = { boardPresenter.loadBoard(it) },
                         onCreateProject = { isShowCreateProjectDialog = true },
-                        onJoinProject = { isShowJoinProjectDialog = true }
+                        onJoinProject = { isShowJoinProjectDialog = true },
+                        onLogout = { logout() }
                     )
                     is AppScreen.Board -> {
                         boardState?.let { (project, tasks) ->
@@ -140,6 +147,13 @@ class MainActivity : ComponentActivity(), AuthContract.View, ProjectContract.Vie
                 }
             }
         }
+    }
+
+    private fun logout() {
+        FirebaseAuth.getInstance().signOut()
+        projectsState = emptyList()
+        boardState = null
+        currentScreenState = AppScreen.Auth
     }
 
     // --- View Implementations ---
