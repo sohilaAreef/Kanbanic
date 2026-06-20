@@ -41,6 +41,18 @@ class AuthPresenter : AuthContract.Presenter {
             .addOnCompleteListener { task ->
                 view?.hideLoading()
                 if (task.isSuccessful) {
+                    val user = task.result?.user
+                    user?.let {
+                        val userDoc = com.example.kanbanic.data.model.User(
+                            id = it.uid,
+                            name = it.displayName ?: "User",
+                            email = it.email ?: ""
+                        )
+                        com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                            .collection("users")
+                            .document(it.uid)
+                            .set(userDoc, com.google.firebase.firestore.SetOptions.merge())
+                    }
                     view?.navigateToDashboard()
                 } else {
                     view?.showError(task.exception?.localizedMessage ?: "Google sign-in failed")
@@ -73,10 +85,22 @@ class AuthPresenter : AuthContract.Presenter {
         auth.createUserWithEmailAndPassword(email, pass)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
+                    val userId = task.result?.user?.uid ?: ""
                     val profileUpdate = UserProfileChangeRequest.Builder()
                         .setDisplayName(name)
                         .build()
                     task.result?.user?.updateProfile(profileUpdate)
+
+                    // Save user to Firestore
+                    val userDoc = com.example.kanbanic.data.model.User(
+                        id = userId,
+                        name = name,
+                        email = email
+                    )
+                    com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                        .collection("users")
+                        .document(userId)
+                        .set(userDoc)
 
                     view?.hideLoading()
                     view?.navigateToDashboard()

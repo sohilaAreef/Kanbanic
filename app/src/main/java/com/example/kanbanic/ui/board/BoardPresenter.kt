@@ -1,6 +1,6 @@
 package com.example.kanbanic.ui.board
 
-import com.example.kanbanic.data.MockDataRepository
+import com.example.kanbanic.data.FirebaseRepository
 import com.example.kanbanic.data.model.*
 
 class BoardPresenter : BoardContract.Presenter {
@@ -15,22 +15,42 @@ class BoardPresenter : BoardContract.Presenter {
     }
 
     override fun loadBoard(projectId: String) {
-        val project = MockDataRepository.getProjectById(projectId)
-        val tasks = MockDataRepository.getTasksByProject(projectId)
-
-        if (project != null) {
-            view?.showBoard(project, tasks)
-        } else {
-            view?.showError("Project not found")
-        }
+        FirebaseRepository.getProjectById(projectId,
+            onSuccess = { project ->
+                if (project != null) {
+                    FirebaseRepository.getTasksByProject(projectId,
+                        onSuccess = { tasks ->
+                            view?.showBoard(project, tasks)
+                            
+                            // Fetch real member data and filter out the current user
+                            FirebaseRepository.getUsersByIds(project.members,
+                                onSuccess = { allMembers ->
+                                    val currentUserId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
+                                    val otherMembers = allMembers.filter { it.id != currentUserId }
+                                    view?.showProjectMembers(otherMembers)
+                                },
+                                onFailure = { /* Silently fail for members */ }
+                            )
+                        },
+                        onFailure = { error ->
+                            view?.showError(error.message ?: "Failed to load tasks")
+                        }
+                    )
+                } else {
+                    view?.showError("Project not found")
+                }
+            },
+            onFailure = { error ->
+                view?.showError(error.message ?: "Failed to load project")
+            }
+        )
     }
 
     override fun updateTaskColumn(taskId: String, toColumnId: String, newIndex: Int) {
-        MockDataRepository.updateTaskColumn(taskId, toColumnId)
-        val project = MockDataRepository.getProjects().find { p -> 
-            MockDataRepository.getTasksByProject(p.id).any { it.id == taskId }
-        }
-        project?.let { loadBoard(it.id) }
+        FirebaseRepository.updateTaskColumn(taskId, toColumnId,
+            onSuccess = { /* Snapshot listener will trigger loadBoard indirectly or we can reload */ },
+            onFailure = { error -> view?.showError(error.message ?: "Failed to update task") }
+        )
     }
 
     override fun addTask(
@@ -44,31 +64,44 @@ class BoardPresenter : BoardContract.Presenter {
         assigneeId: String?,
         color: String?
     ) {
-        MockDataRepository.addTask(projectId, columnId, title, description, priority, importance, dueDate, assigneeId, color)
-        loadBoard(projectId)
+        FirebaseRepository.addTask(projectId, columnId, title, description, priority, importance, dueDate, assigneeId, color,
+            onSuccess = { /* Snapshot listener handles update */ },
+            onFailure = { error -> view?.showError(error.message ?: "Failed to add task") }
+        )
     }
 
     override fun addColumn(projectId: String, name: String) {
-        MockDataRepository.addColumn(projectId, name)
-        loadBoard(projectId)
+        FirebaseRepository.addColumn(projectId, name,
+            onSuccess = { /* Snapshot listener handles update */ },
+            onFailure = { error -> view?.showError(error.message ?: "Failed to add column") }
+        )
     }
 
     override fun inviteMember(projectId: String, email: String) {
-        // Firebase: logic to send invite or add user email to project.members
-        // For UI: show success
+        FirebaseRepository.inviteMember(projectId, email,
+            onSuccess = { /* Success message in UI */ },
+            onFailure = { error -> view?.showError(error.message ?: "Failed to invite member") }
+        )
     }
     
     override fun addComment(taskId: String, text: String) {
-        // Firebase: update task.comments
+        FirebaseRepository.addComment(taskId, text,
+            onSuccess = { /* Success */ },
+            onFailure = { error -> view?.showError(error.message ?: "Failed to add comment") }
+        )
     }
 
     override fun updateProjectBackground(projectId: String, color: String) {
-        MockDataRepository.updateProjectBackground(projectId, color)
-        loadBoard(projectId)
+        FirebaseRepository.updateProjectBackground(projectId, color,
+            onSuccess = { /* Success */ },
+            onFailure = { error -> view?.showError(error.message ?: "Failed to update background") }
+        )
     }
 
     override fun updateColumnColor(projectId: String, columnId: String, color: String) {
-        MockDataRepository.updateColumnColor(projectId, columnId, color)
-        loadBoard(projectId)
+        FirebaseRepository.updateColumnColor(projectId, columnId, color,
+            onSuccess = { /* Success */ },
+            onFailure = { error -> view?.showError(error.message ?: "Failed to update column color") }
+        )
     }
 }

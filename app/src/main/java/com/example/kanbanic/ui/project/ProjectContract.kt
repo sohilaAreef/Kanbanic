@@ -8,6 +8,9 @@ interface ProjectContract {
         fun navigateToProjectBoard(projectId: String)
         fun showCreateProjectDialog()
         fun showJoinProjectDialog()
+        fun showLoading()
+        fun hideLoading()
+        fun showError(message: String)
     }
 
     interface Presenter {

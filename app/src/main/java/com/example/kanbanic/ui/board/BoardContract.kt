@@ -6,6 +6,7 @@ import com.example.kanbanic.data.model.Task
 interface BoardContract {
     interface View {
         fun showBoard(project: Project, tasks: List<Task>)
+        fun showProjectMembers(members: List<com.example.kanbanic.data.model.User>)
         fun showAddTaskDialog(columnId: String)
         fun showTaskDetails(task: Task)
         fun showAddColumnDialog()

@@ -1,6 +1,6 @@
 package com.example.kanbanic.ui.project
 
-import com.example.kanbanic.data.MockDataRepository
+import com.example.kanbanic.data.FirebaseRepository
 
 class ProjectPresenter : ProjectContract.Presenter {
     private var view: ProjectContract.View? = null
@@ -14,16 +14,35 @@ class ProjectPresenter : ProjectContract.Presenter {
     }
 
     override fun loadProjects() {
-        view?.showProjects(MockDataRepository.getProjects())
+        view?.showLoading()
+        FirebaseRepository.getProjects(
+            onSuccess = { projects ->
+                view?.hideLoading()
+                view?.showProjects(projects)
+            },
+            onFailure = { error ->
+                view?.hideLoading()
+                view?.showError(error.message ?: "Failed to load projects")
+            }
+        )
     }
 
     override fun createProject(name: String, description: String) {
-        MockDataRepository.addProject(name, description)
-        loadProjects()
+        view?.showLoading()
+        FirebaseRepository.addProject(
+            name, description,
+            onSuccess = {
+                view?.hideLoading()
+                loadProjects()
+            },
+            onFailure = { error ->
+                view?.hideLoading()
+                view?.showError(error.message ?: "Failed to create project")
+            }
+        )
     }
 
     override fun joinProject(inviteCode: String) {
-        // Mock join
-        view?.navigateToProjectBoard("1")
+        // logic for joining project via invite code
     }
 }

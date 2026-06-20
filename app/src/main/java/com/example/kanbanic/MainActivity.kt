@@ -19,6 +19,7 @@ import com.example.kanbanic.ui.board.TaskDetailBottomSheet
 import com.example.kanbanic.ui.project.*
 import com.example.kanbanic.ui.theme.KanbanicTheme
 import com.google.firebase.auth.FirebaseAuth
+import kotlin.collections.emptyList
 
 class MainActivity : ComponentActivity(), AuthContract.View, ProjectContract.View, BoardContract.View {
 
@@ -29,6 +30,7 @@ class MainActivity : ComponentActivity(), AuthContract.View, ProjectContract.Vie
     private var currentScreenState by mutableStateOf<AppScreen>(AppScreen.Auth)
     private var projectsState by mutableStateOf<List<Project>>(emptyList())
     private var boardState by mutableStateOf<Pair<Project, List<Task>>?>(null)
+    private var projectMembersState by mutableStateOf<List<com.example.kanbanic.data.model.User>>(emptyList())
 
     // UI States for Dialogs and Overlays
     private var selectedTask by mutableStateOf<Task?>(null)
@@ -100,12 +102,9 @@ class MainActivity : ComponentActivity(), AuthContract.View, ProjectContract.Vie
 
                 showAddTaskDialogByColumnId?.let { columnId ->
                     val project = boardState?.first
-                    val members = project?.members?.let { ids -> 
-                        com.example.kanbanic.data.MockDataRepository.getUsersByIds(ids)
-                    } ?: emptyList()
                     
                     AddTaskDialog(
-                        members = members,
+                        members = projectMembersState,
                         onDismiss = { showAddTaskDialogByColumnId = null },
                         onConfirm = { title, desc, priority, importance, dueDate, assigneeId, color ->
                             project?.id?.let { projectId ->
@@ -198,6 +197,9 @@ class MainActivity : ComponentActivity(), AuthContract.View, ProjectContract.Vie
     override fun showBoard(project: Project, tasks: List<Task>) {
         boardState = project to tasks
         currentScreenState = AppScreen.Board(project.id)
+    }
+    override fun showProjectMembers(members: List<com.example.kanbanic.data.model.User>) {
+        projectMembersState = members
     }
     override fun showAddTaskDialog(columnId: String) { showAddTaskDialogByColumnId = columnId }
     override fun showTaskDetails(task: Task) { selectedTask = task }
